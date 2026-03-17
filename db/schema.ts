@@ -97,3 +97,15 @@ export const votes = pgTable("votes", {
   // This is the most important line for data integrity:
   uniqueVote: unique().on(table.userId, table.resourceId),
 }));
+
+export const comments = pgTable("comments", {
+  id: text("id").primaryKey(),
+  content: text("content").notNull(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  resourceId: text("resource_id").notNull().references(() => resources.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  // Indexing resourceId is CRITICAL. 
+  // We will always fetch comments "WHERE resource_id = X".
+  resourceIdx: index("comment_resource_idx").on(table.resourceId),
+}));
