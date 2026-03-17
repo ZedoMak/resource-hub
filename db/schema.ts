@@ -1,4 +1,4 @@
-import { pgTable, timestamp, boolean, text,integer, pgEnum, index } from "drizzle-orm/pg-core";
+import { pgTable, timestamp, boolean, text,integer, pgEnum, index, unique } from "drizzle-orm/pg-core";
 
 export const user = pgTable("users", {
     id: text("id").primaryKey(),
@@ -84,3 +84,16 @@ export const resources = pgTable("resources", {
     courseIdx: index("course_idx").on(table.courseId),
   };
 });
+
+export const voteTypeEnum = pgEnum("vote_type", ["UP", "DOWN"]);
+
+export const votes = pgTable("votes", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id),
+  resourceId: text("resource_id").notNull().references(() => resources.id),
+  type: voteTypeEnum("type").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  // This is the most important line for data integrity:
+  uniqueVote: unique().on(table.userId, table.resourceId),
+}));
