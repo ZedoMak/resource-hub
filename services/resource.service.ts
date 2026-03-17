@@ -53,6 +53,18 @@ export class ResourceService {
       .limit(limit)
       .offset(offset);
   }
+
+  static async trackDownload(resourceId: string) {
+    return await db
+      .update(resources)
+      .set({
+        downloads: sql`${resources.downloads} + 1`,
+        // We update the score immediately to keep our "Read" operations fast
+        score: sql`${resources.upvotes} * 3 + (${resources.downloads} + 1) - ${resources.downvotes} * 2`,
+      })
+      .where(eq(resources.id, resourceId))
+      .returning({ id: resources.id, newScore: resources.score });
+  }
 }
 
 
