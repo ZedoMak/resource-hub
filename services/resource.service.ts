@@ -65,6 +65,22 @@ export class ResourceService {
       .where(eq(resources.id, resourceId))
       .returning({ id: resources.id, newScore: resources.score });
   }
+
+  static async searchResources(query: string) {
+    // ilike is a Case-Insensitive LIKE search.
+    // For a "Senior" approach, we combine ilike with a simple rank
+    return await db
+      .select()
+      .from(resources)
+      .where(
+        or(
+          ilike(resources.title, `%${query}%`),
+          // You could also search by course code if you join the courses table
+        )
+      )
+      .orderBy(desc(resources.score)) // Still prioritize high-quality resources
+      .limit(10);
+  }
 }
 
 
