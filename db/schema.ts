@@ -1,6 +1,6 @@
-import { pgTable, timestamp, boolean, text } from "drizzle-orm/pg-core";
+import { pgTable, timestamp, boolean, text,integer, pgEnum, index } from "drizzle-orm/pg-core";
 
-export const users = pgTable("users", {
+export const user = pgTable("users", {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
@@ -44,4 +44,43 @@ export const verification = pgTable("verification", {
 	expiresAt: timestamp('expires_at').notNull(),
 	createdAt: timestamp('created_at'),
 	updatedAt: timestamp('updated_at'),
+});
+
+
+export const resourceTypeEnum = pgEnum("resource_type", ["EXAM", "NOTE", "SUMMARY", "ASSIGNMENT"]);
+
+export const universities = pgTable("universities", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull().unique(),
+});
+
+export const courses = pgTable("courses", {
+  id: text("id").primaryKey(),
+  code: text("code").notNull(), // e.g., "CS201"
+  name: text("name").notNull(),
+  universityId: text("university_id").notNull().references(() => universities.id),
+});
+
+export const resources = pgTable("resources", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  fileUrl: text("file_url").notNull(),
+  fileKey: text("file_key").notNull(), // Useful for deleting from S3/UploadThing
+  type: resourceTypeEnum("type").default("EXAM").notNull(),
+  
+  // Stats for the Ranking System
+  upvotes: integer("upvotes").default(0).notNull(),
+  downvotes: integer("downvotes").default(0).notNull(),
+  downloads: integer("downloads").default(0).notNull(),
+  score: integer("score").default(0).notNull(), // (upvotes * 3 + downloads - downvotes * 2)
+
+  userId: text("user_id").notNull().references(() => user.id),
+  courseId: text("course_id").notNull().references(() => courses.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    // Indexing the score and courseId for fast searching/sorting
+    scoreIdx: index("score_idx").on(table.score),
+    courseIdx: index("course_idx").on(table.courseId),
+  };
 });
