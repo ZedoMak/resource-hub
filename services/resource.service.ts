@@ -1,7 +1,8 @@
 import { db } from "@/db";
-import { resources, courses } from "@/db/schema";
+import { resources, courses, user, comments } from "@/db/schema";
 import { nanoid } from "nanoid";
-import {eq, and, desc, sql} from "drizzle-orm"
+import {eq, and, desc, sql, or, ilike} from "drizzle-orm"
+import { title } from "process";
 
 export interface FindResourcesParams {
   courseId?: string;
@@ -81,6 +82,24 @@ export class ResourceService {
       .orderBy(desc(resources.score)) // Still prioritize high-quality resources
       .limit(10);
   }
+
+  static async findManyWithStats(limit=10){
+    return await db.select({
+      id: resources.id,
+      title: resources.title,
+      score: resources.score,
+      authorName: user.name,
+
+      commentCount: sql<number>`(
+        SELECT count(*) FROM ${comments} WHERE ${comments.resourceId} = ${resources.id}
+      )`.mapWith(Number),
+
+    })
+    .from(resources)
+    .leftJoin(user, eq(resources.userId, user.id))
+    .orderBy(desc(resources.score))
+    .limit(limit)
+  } 
 }
 
 
