@@ -6,7 +6,7 @@ const f = createUploadthing();
 
 export const ourFileRouter = {
   // a "pdfUploader" endpoint
-  pdfUploader: f({ pdf: { maxFileSize: "4MB", maxFileCount: 1 } })
+  pdfUploader: f({ pdf: { maxFileSize: "16MB", maxFileCount: 1 } })
     .middleware(async () => {
       // Use Better Auth to protect the route
       const session = await auth.api.getSession({

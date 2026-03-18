@@ -3,30 +3,33 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { Session } from "better-auth/types";
 
 export default async function authMiddleware(request: NextRequest) {
-  // We check if the user is trying to access the dashboard
-  if (request.nextUrl.pathname.startsWith("/dashboard")) {
-    const { data: session } = await betterFetch<Session>(
-      "/api/auth/get-session",
-      {
-        baseURL: request.nextUrl.origin,
-        headers: {
-          // We must pass the cookies from the request to the auth API
-          cookie: request.headers.get("cookie") || "",
-        },
-      }
-    );
+  const { pathname } = request.nextUrl;
 
-    if (!session) {
-      // Not logged in? Redirect to login with a "callback" 
-      // so they return here after signing in.
-      return NextResponse.redirect(new URL("/login", request.url));
+  // 1. Get the session
+  const { data: session } = await betterFetch<Session>(
+    "/api/auth/get-session",
+    {
+      baseURL: request.nextUrl.origin,
+      headers: {
+        cookie: request.headers.get("cookie") || "",
+      },
     }
+  );
+
+  // 2. Logic: If logged in, DON'T allow /login or /signup
+  if (session && (pathname.startsWith("/login") || pathname.startsWith("/signup"))) {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+
+  // 3. Logic: If NOT logged in, DON'T allow /dashboard
+  if (!session && pathname.startsWith("/dashboard")) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  // Only run middleware on these paths to keep the app fast
-  matcher: ["/dashboard/:path*"],
+  // Run middleware on auth pages and dashboard
+  matcher: ["/dashboard/:path*", "/login", "/signup"],
 };

@@ -11,6 +11,7 @@ export interface FindResourcesParams {
   offset?: number;
 }
 export class ResourceService {
+  
   static async createResource(data: {
     title: string;
     fileUrl: string;
@@ -100,6 +101,32 @@ export class ResourceService {
     .orderBy(desc(resources.score))
     .limit(limit)
   } 
+
+  static async findById(id: string) {
+    const result = await db
+      .select({
+        id: resources.id,
+        title: resources.title,
+        type: resources.type,
+        fileUrl: resources.fileUrl,
+        score: resources.score,
+        createdAt: resources.createdAt,
+        // Joined data
+        userName: user.name,
+        courseName: courses.name,
+        courseCode: courses.code,
+        // Adding derived stats
+        upvotes: sql<number>`(SELECT count(*) FROM votes WHERE resource_id = ${resources.id} AND type = 'UP')`.mapWith(Number),
+        downloads: sql<number>`(SELECT count(*) FROM downloads WHERE resource_id = ${resources.id})`.mapWith(Number),
+      })
+      .from(resources)
+      .leftJoin(user, eq(resources.userId, user.id))
+      .leftJoin(courses, eq(resources.courseId, courses.id))
+      .where(eq(resources.id, id))
+      .limit(1);
+
+    return result[0] || null;
+  }
 }
 
 
