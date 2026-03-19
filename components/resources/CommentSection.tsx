@@ -17,12 +17,28 @@ export function CommentSection({ resourceId, initialComments, user }: any) {
 
     setIsSubmitting(true);
     try {
-      // Logic for posting to your /api/comments endpoint...
-      // For now, we'll simulate the success
-      const fakeNewComment = { id: Date.now(), content: newComment, userName: user.name, createdAt: new Date() };
-      setComments([fakeNewComment, ...comments]);
-      setNewComment("");
-      toast.success("Comment posted!");
+      const res = await fetch("/api/comments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: newComment,
+          resourceId: resourceId,
+        }),
+      });
+
+      if (res.ok) {
+        const newCommentData = await res.json();
+        setComments([newCommentData, ...comments]);
+        setNewComment("");
+        toast.success("Comment posted!");
+      } else {
+        const errorData = await res.json();
+        toast.error(errorData.error || "Failed to post comment");
+      }
+    } catch (error) {
+      toast.error("Failed to post comment");
     } finally {
       setIsSubmitting(false);
     }

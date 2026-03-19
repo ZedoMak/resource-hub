@@ -49,10 +49,10 @@ export function DashboardSidebar({ currentType }: { currentType?: string }) {
                 : "ghost"
               }
               className={cn(
-                "w-full justify-start gap-3 px-4 py-2 text-sm font-medium transition-all",
+                "w-full justify-start gap-3 px-4 py-2.5 text-sm font-medium transition-all rounded-xl",
                 (currentType === item.value || (!currentType && item.value === "ALL"))
-                ? "bg-zinc-100 text-zinc-900"
-                : "text-zinc-500 hover:text-zinc-900"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
               onClick={() => handleFilter(item.value)}
             >
@@ -63,17 +63,20 @@ export function DashboardSidebar({ currentType }: { currentType?: string }) {
         </div>
       </div>
       
-      <div className="px-3 py-2 pt-4 border-t border-zinc-100">
-         <h2 className="mb-4 px-4 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+      <div className="px-3 py-2 pt-6 mt-2 border-t border-border/40">
+        <h2 className="mb-4 px-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">
           Contribute
         </h2>
-        <div className="rounded-2xl bg-zinc-950 p-6 text-white">
-           <p className="text-xs text-zinc-400 mb-4">
-             Have a paper that could help others? Upload it and earn points.
-           </p>
-           <Button variant="secondary" size="sm" className="w-full text-xs">
-             Upload Now
-           </Button>
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-[1px] shadow-sm">
+          <div className="relative h-full w-full rounded-[23px] bg-background/95 backdrop-blur-xl p-6">
+            <h3 className="font-semibold text-foreground mb-1 text-sm">Share Knowledge</h3>
+            <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+              Have a paper that could help others? Upload it and start earning contribution points!
+            </p>
+            <Button size="sm" className="w-full text-xs bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0 shadow-md transition-all hover:shadow-lg hover:scale-[1.02]">
+              Start Uploading
+            </Button>
+          </div>
         </div>
       </div>
     </div>

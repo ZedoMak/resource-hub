@@ -8,10 +8,11 @@ import { Button } from "@/components/ui/button";
 import { Download, MessageSquare, Share2, ThumbsUp } from "lucide-react";
 import { CommentSection } from "@/components/resources/CommentSection";
 
-export default async function ResourceDetailPage({ params }: { params: { id: string } }) {
+export default async function ResourceDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
   const session = await auth.api.getSession({ headers: await headers() });
-  const resource = await ResourceService.findById(params.id);
-  const comments = await CommentService.getByResource(params.id);
+  const resource = await ResourceService.findById(resolvedParams.id);
+  const comments = await CommentService.getByResource(resolvedParams.id);
 
   if (!resource) notFound();
 

@@ -1,8 +1,7 @@
 import { db } from "@/db";
-import { resources, courses, user, comments } from "@/db/schema";
+import { resources, courses, user, comments, universities } from "@/db/schema";
 import { nanoid } from "nanoid";
 import {eq, and, desc, sql, or, ilike} from "drizzle-orm"
-import { title } from "process";
 
 export interface FindResourcesParams {
   courseId?: string;
@@ -20,15 +19,54 @@ export class ResourceService {
     courseId: string;
     type: "EXAM" | "NOTE" | "SUMMARY" | "ASSIGNMENT";
   }) {
-   // here Generate IDs on the application side (e.g., nanoid) 
-    // instead of relying on serial integers for public-facing IDs. 
-    // It prevents people from guessing the total number of resources.
-    const id = nanoid();
+    // 1. Ensure the course exists, or create it automatically
+    let existingCourse = await db
+      .select()
+      .from(courses)
+      .where(or(eq(courses.id, data.courseId), eq(courses.code, data.courseId)))
+      .limit(1)
+      .then((res) => res[0]);
 
+    if (!existingCourse) {
+      // 2. Ensure a default university exists
+      let uni = await db
+        .select()
+        .from(universities)
+        .limit(1)
+        .then((res) => res[0]);
+
+      if (!uni) {
+        const newUni = await db
+          .insert(universities)
+          .values({ id: nanoid(), name: "Default University" })
+          .returning();
+        uni = newUni[0];
+      }
+
+      // 3. Create the missing course on the fly
+      const newCourse = await db
+        .insert(courses)
+        .values({
+          id: nanoid(),
+          code: data.courseId.toUpperCase().replace(/\s+/g, ""), // "cs 101" -> "CS101"
+          name: data.courseId,
+          universityId: uni.id,
+        })
+        .returning();
+      existingCourse = newCourse[0];
+    }
+
+    // 4. Create the final resource linked to the valid course
+    const id = nanoid();
     return await db.insert(resources).values({
       id,
-      ...data,
-      score: 0, // Initial score
+      title: data.title,
+      fileUrl: data.fileUrl,
+      fileKey: data.fileKey,
+      userId: data.userId,
+      courseId: existingCourse.id, // Now guaranteed to be a valid UUID
+      type: data.type,
+      score: 0,
     }).returning();
   }
   static async findMany(params: FindResourcesParams) {
@@ -134,7 +172,7 @@ export class ResourceService {
         courseCode: courses.code,
         // Adding derived stats
         upvotes: sql<number>`(SELECT count(*) FROM votes WHERE resource_id = ${resources.id} AND type = 'UP')`.mapWith(Number),
-        downloads: sql<number>`(SELECT count(*) FROM downloads WHERE resource_id = ${resources.id})`.mapWith(Number),
+        downloads: resources.downloads,
       })
       .from(resources)
       .leftJoin(user, eq(resources.userId, user.id))

@@ -6,7 +6,7 @@ import { handleApiError } from "@/lib/security";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Authenticate the user
@@ -18,12 +18,14 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const resolvedParams = await params;
+
     // Validate resource ID format
-    if (!params.id || params.id.length < 6) {
+    if (!resolvedParams.id || resolvedParams.id.length < 6) {
       return NextResponse.json({ error: "Invalid resource ID" }, { status: 400 });
     }
 
-    const resource = await ResourceService.trackDownload(params.id);
+    const resource = await ResourceService.trackDownload(resolvedParams.id);
     
     if (!resource || resource.length === 0) {
       return NextResponse.json({ error: "Resource not found" }, { status: 404 });

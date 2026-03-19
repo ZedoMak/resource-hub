@@ -12,14 +12,17 @@ export async function Navbar() {
   });
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-14 items-center justify-between px-4">
-        <div className="flex items-center space-x-4">
-          <Link href="/" className="font-bold tracking-tight text-primary">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center space-x-6">
+          <Link href="/" className="font-bold tracking-tight text-primary flex items-center gap-2">
+            <span className="bg-primary text-primary-foreground p-1 rounded-md text-xs font-black">RH</span>
             ResourceHub
           </Link>
           <nav className="hidden md:flex items-center space-x-6 text-sm font-medium text-muted-foreground">
-            <Link href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</Link>
+            <Link href="/dashboard" className="text-foreground transition-colors hover:text-foreground/80">
+              Dashboard
+            </Link>
           </nav>
         </div>
         

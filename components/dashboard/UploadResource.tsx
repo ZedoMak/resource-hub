@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
 import { 
   Dialog, 
   DialogContent, 
@@ -19,7 +18,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { UploadDropzone } from "@/lib/uploadthing"; // We'll create this helper next
+import { UploadDropzone } from "@/lib/uploadthing";
 import { toast } from "sonner";
 import { Plus, FileIcon, Loader2 } from "lucide-react";
 
@@ -27,6 +26,7 @@ export function UploadResource() {
   const [open, setOpen] = useState(false);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [type, setType] = useState<string>("EXAM");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -38,9 +38,12 @@ export function UploadResource() {
     try {
       const res = await fetch("/api/resources", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
           title: formData.get("title"),
-          type: formData.get("type"),
+          type: type,          // ← use state, not FormData (Select is a headless component)
           courseId: formData.get("courseId"),
           fileUrl: fileUrl,
         }),
@@ -50,9 +53,13 @@ export function UploadResource() {
         toast.success("Resource uploaded successfully!");
         setOpen(false);
         setFileUrl(null);
+        setType("EXAM");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error || "Upload failed. Please try again.");
       }
     } catch (error) {
-      toast.error("Something went wrong");
+      toast.error("Something went wrong. Check your connection.");
     } finally {
       setIsSubmitting(false);
     }
@@ -65,7 +72,7 @@ export function UploadResource() {
           <Plus className="h-4 w-4" /> Upload Resource
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Upload New Resource</DialogTitle>
         </DialogHeader>
@@ -79,7 +86,7 @@ export function UploadResource() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Type</Label>
-              <Select name="type" defaultValue="EXAM">
+              <Select value={type} onValueChange={setType}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -87,6 +94,7 @@ export function UploadResource() {
                   <SelectItem value="EXAM">Past Exam</SelectItem>
                   <SelectItem value="NOTE">Lecture Note</SelectItem>
                   <SelectItem value="SUMMARY">Summary</SelectItem>
+                  <SelectItem value="ASSIGNMENT">Assignment</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -101,6 +109,13 @@ export function UploadResource() {
             {!fileUrl ? (
               <UploadDropzone
                 endpoint="pdfUploader"
+                appearance={{
+                  container: "border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 flex flex-col items-center justify-center bg-zinc-50/50 hover:bg-zinc-50 transition-colors cursor-pointer",
+                  button: "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 rounded-md px-4 py-2 text-sm font-medium transition-colors w-full mt-4 cursor-pointer",
+                  label: "text-zinc-700 dark:text-zinc-300 font-medium hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors",
+                  allowedContent: "text-zinc-500 text-xs mt-2",
+                  uploadIcon: "text-zinc-400 mb-4 h-10 w-10",
+                }}
                 onClientUploadComplete={(res) => {
                   setFileUrl(res[0].url);
                   toast.success("File uploaded to server");
