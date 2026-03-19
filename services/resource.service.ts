@@ -1,5 +1,5 @@
 import { db } from "@/db";
-import { resources, courses, user, comments, universities } from "@/db/schema";
+import { resources, courses, user, comments, universities, votes } from "@/db/schema";
 import { nanoid } from "nanoid";
 import {eq, and, desc, sql, or, ilike} from "drizzle-orm"
 
@@ -157,7 +157,54 @@ export class ResourceService {
     .limit(limit)
   } 
 
-  static async findById(id: string) {
+  static async toggleVote(resourceId: string, userId: string, voteType: "UP" | "DOWN") {
+    const existingVote = await db
+      .select()
+      .from(votes)
+      .where(and(eq(votes.resourceId, resourceId), eq(votes.userId, userId)))
+      .limit(1)
+      .then((res) => res[0]);
+
+    if (existingVote) {
+      if (existingVote.type === voteType) {
+        // Toggle off
+        await db.delete(votes).where(eq(votes.id, existingVote.id));
+      } else {
+        // Change vote
+        await db.update(votes).set({ type: voteType }).where(eq(votes.id, existingVote.id));
+      }
+    } else {
+      // New vote
+      await db.insert(votes).values({
+        id: nanoid(),
+        resourceId,
+        userId,
+        type: voteType,
+      });
+    }
+
+    // Recalculate and update the materialized stats in the resources table
+    await db.update(resources).set({
+      upvotes: sql`(SELECT count(*)::int FROM ${votes} WHERE ${votes.resourceId} = ${resources.id} AND type = 'UP')`,
+      downvotes: sql`(SELECT count(*)::int FROM ${votes} WHERE ${votes.resourceId} = ${resources.id} AND type = 'DOWN')`,
+      score: sql`(SELECT count(*)::int FROM ${votes} WHERE ${votes.resourceId} = ${resources.id} AND type = 'UP') * 3 + ${resources.downloads} - (SELECT count(*)::int FROM ${votes} WHERE ${votes.resourceId} = ${resources.id} AND type = 'DOWN') * 2`
+    }).where(eq(resources.id, resourceId));
+
+    // Return the newly updated stats
+    const newStats = await db.select({
+      upvotes: resources.upvotes,
+      downvotes: resources.downvotes,
+      score: resources.score
+    }).from(resources).where(eq(resources.id, resourceId)).then(r => r[0]);
+
+    return {
+      success: true,
+      userVote: existingVote?.type === voteType ? null : voteType,
+      ...newStats
+    };
+  }
+
+  static async findById(id: string, userId?: string) {
     const result = await db
       .select({
         id: resources.id,
@@ -171,8 +218,12 @@ export class ResourceService {
         courseName: courses.name,
         courseCode: courses.code,
         // Adding derived stats
-        upvotes: sql<number>`(SELECT count(*) FROM votes WHERE resource_id = ${resources.id} AND type = 'UP')`.mapWith(Number),
+        upvotes: resources.upvotes,
+        downvotes: resources.downvotes,
         downloads: resources.downloads,
+        userVote: userId 
+          ? sql<string | null>`(SELECT type FROM ${votes} WHERE ${votes.resourceId} = ${resources.id} AND ${votes.userId} = ${userId} LIMIT 1)` 
+          : sql<string | null>`NULL`,
       })
       .from(resources)
       .leftJoin(user, eq(resources.userId, user.id))

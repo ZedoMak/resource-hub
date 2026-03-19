@@ -32,6 +32,17 @@ export const ourFileRouter = {
       console.log("File name:", file.name);
       console.log("File size:", file.size);
     }),
+  
+  // an "imageUploader" endpoint for profile pictures
+  imageUploader: f({ image: { maxFileSize: "4MB", maxFileCount: 1 } })
+    .middleware(async () => {
+      const session = await auth.api.getSession({ headers: await headers() });
+      if (!session) throw new Error("Unauthorized");
+      return { userId: session.user.id };
+    })
+    .onUploadComplete(async ({ metadata, file }) => {
+      console.log("Image upload complete for userId:", metadata.userId);
+    }),
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;

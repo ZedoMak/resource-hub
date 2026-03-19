@@ -5,8 +5,10 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download, MessageSquare, Share2, ThumbsUp } from "lucide-react";
+import { DownloadButton } from "@/components/resources/DownloadButton";
+import { Download, MessageSquare, Share2 } from "lucide-react";
 import { CommentSection } from "@/components/resources/CommentSection";
+import { VoteButtons } from "@/components/resources/VoteButtons";
 
 export default async function ResourceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -64,17 +66,18 @@ export default async function ResourceDetailPage({ params }: { params: Promise<{
           </div>
 
           <div className="space-y-3">
-            <Button className="w-full h-12 text-base gap-2" size="lg">
+            <DownloadButton resourceId={resource.id} fileUrl={resource.fileUrl} className="w-full h-12 text-base gap-2" size="lg">
               <Download className="h-4 w-4" /> Download PDF
+            </DownloadButton>
+            <VoteButtons 
+              resourceId={resource.id}
+              initialUserVote={resource.userVote}
+              initialUpvotes={resource.upvotes}
+              initialDownvotes={resource.downvotes}
+            />
+            <Button variant="outline" className="w-full h-11 gap-2 border-zinc-200">
+              <Share2 className="h-4 w-4" /> Share
             </Button>
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="h-11 gap-2 border-zinc-200">
-                <ThumbsUp className="h-4 w-4" /> Upvote
-              </Button>
-              <Button variant="outline" className="h-11 gap-2 border-zinc-200">
-                <Share2 className="h-4 w-4" /> Share
-              </Button>
-            </div>
           </div>
 
           <div className="mt-8 pt-8 border-t border-zinc-50 space-y-4">

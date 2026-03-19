@@ -3,13 +3,14 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { 
-  BookOpen, 
-  FileText, 
-  GraduationCap, 
-  History, 
-  LayoutDashboard 
+import {
+  BookOpen,
+  FileText,
+  GraduationCap,
+  History,
+  LayoutDashboard
 } from "lucide-react";
+import { UploadResource } from "@/components/dashboard/UploadResource";
 
 const navItems = [
   { label: "All Resources", value: "ALL", icon: LayoutDashboard },
@@ -44,15 +45,15 @@ export function DashboardSidebar({ currentType }: { currentType?: string }) {
             <Button
               key={item.value}
               variant={
-                (currentType === item.value || (!currentType && item.value === "ALL")) 
-                ? "secondary" 
-                : "ghost"
+                (currentType === item.value || (!currentType && item.value === "ALL"))
+                  ? "secondary"
+                  : "ghost"
               }
               className={cn(
                 "w-full justify-start gap-3 px-4 py-2.5 text-sm font-medium transition-all rounded-xl",
                 (currentType === item.value || (!currentType && item.value === "ALL"))
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
               onClick={() => handleFilter(item.value)}
             >
@@ -62,7 +63,7 @@ export function DashboardSidebar({ currentType }: { currentType?: string }) {
           ))}
         </div>
       </div>
-      
+
       <div className="px-3 py-2 pt-6 mt-2 border-t border-border/40">
         <h2 className="mb-4 px-4 text-xs font-bold uppercase tracking-wider text-muted-foreground">
           Contribute
@@ -71,11 +72,9 @@ export function DashboardSidebar({ currentType }: { currentType?: string }) {
           <div className="relative h-full w-full rounded-[23px] bg-background/95 backdrop-blur-xl p-6">
             <h3 className="font-semibold text-foreground mb-1 text-sm">Share Knowledge</h3>
             <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
-              Have a paper that could help others? Upload it and start earning contribution points!
+              Have a paper that could help others? Upload it!
             </p>
-            <Button size="sm" className="w-full text-xs bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0 shadow-md transition-all hover:shadow-lg hover:scale-[1.02]">
-              Start Uploading
-            </Button>
+            <UploadResource />
           </div>
         </div>
       </div>

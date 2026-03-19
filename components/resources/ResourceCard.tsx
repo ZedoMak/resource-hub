@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { FileText, ArrowBigUp, Download } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { DownloadButton } from "@/components/resources/DownloadButton";
 
 interface ResourceCardProps {
   resource: {
@@ -10,9 +11,11 @@ interface ResourceCardProps {
     title: string;
     type: string;
     score: number;
+    fileUrl: string;
     courseName: string | null;
   };
 }
+
 
 export function ResourceCard({ resource }: ResourceCardProps) {
   return (
@@ -40,12 +43,12 @@ export function ResourceCard({ resource }: ResourceCardProps) {
         </p>
       </CardContent>
       <CardFooter className="border-t pt-4 flex justify-between">
-         <Button variant="ghost" size="sm" className="h-8 text-xs">
-           View Details
-         </Button>
-         <Button size="sm" className="h-8 text-xs gap-1">
-           <Download className="h-3 w-3" /> Download
-         </Button>
+        <Button variant="ghost" size="sm" className="h-8 text-xs">
+          View Details
+        </Button>
+        <DownloadButton resourceId={resource.id} fileUrl={resource.fileUrl} size="sm" className="h-8 text-xs gap-1">
+          <Download className="h-3 w-3" /> Download
+        </DownloadButton>
       </CardFooter>
     </Card>
   );
