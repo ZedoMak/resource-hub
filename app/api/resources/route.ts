@@ -2,18 +2,24 @@ import { NextRequest, NextResponse } from "next/server";
 import { ResourceService } from "@/services/resource.service";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { handleApiError } from "@/lib/security";
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  
-  const courseId = searchParams.get("courseId") ?? undefined;
-  const type = searchParams.get("type") as any;
-
   try {
+    const { searchParams } = new URL(req.url);
+    
+    const courseId = searchParams.get("courseId") ?? undefined;
+    const typeParam = searchParams.get("type");
+    
+    // Validate type parameter
+    const validTypes = ["EXAM", "NOTE", "SUMMARY", "ASSIGNMENT"] as const;
+    const type = validTypes.includes(typeParam as any) ? typeParam as any : undefined;
+
     const data = await ResourceService.findMany({ courseId, type });
-    return NextResponse.json(data);
+    const response = NextResponse.json(data);
+    return response;
   } catch (error) {
-    return NextResponse.json({ error: "Failed to fetch" }, { status: 500 });
+    return handleApiError(error);
   }
 }
 
@@ -36,12 +42,37 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // Validate field formats
+    const validTypes = ["EXAM", "NOTE", "SUMMARY", "ASSIGNMENT"];
+    if (!validTypes.includes(type)) {
+      return NextResponse.json({ error: "Invalid resource type" }, { status: 400 });
+    }
+
+    if (title.length > 255) {
+      return NextResponse.json({ error: "Title too long (max 255 characters)" }, { status: 400 });
+    }
+
+    if (title.trim().length === 0) {
+      return NextResponse.json({ error: "Title cannot be empty" }, { status: 400 });
+    }
+
+    // Validate URL format
+    try {
+      new URL(fileUrl);
+    } catch {
+      return NextResponse.json({ error: "Invalid file URL" }, { status: 400 });
+    }
+
     // Extract fileKey from fileUrl (UploadThing provides this in the URL)
     const fileKey = fileUrl.split('/').pop() || '';
+    
+    if (fileKey.length === 0) {
+      return NextResponse.json({ error: "Invalid file URL format" }, { status: 400 });
+    }
 
     // Create the resource
     const resource = await ResourceService.createResource({
-      title,
+      title: title.trim(),
       type,
       courseId,
       fileUrl,
@@ -51,7 +82,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(resource[0], { status: 201 });
   } catch (error) {
-    console.error("Error creating resource:", error);
-    return NextResponse.json({ error: "Failed to create resource" }, { status: 500 });
+    return handleApiError(error);
   }
 }

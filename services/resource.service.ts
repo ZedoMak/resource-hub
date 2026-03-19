@@ -69,6 +69,23 @@ export class ResourceService {
   }
 
   static async searchResources(query: string) {
+    // Validate and sanitize input
+    if (!query || typeof query !== 'string') {
+      throw new Error('Invalid search query');
+    }
+
+    // Length validation to prevent abuse
+    if (query.length > 100) {
+      throw new Error('Search query too long');
+    }
+
+    // Remove potentially dangerous characters
+    const sanitizedQuery = query.replace(/[%;]/g, '').trim();
+    
+    if (sanitizedQuery.length < 2) {
+      return []; // Return empty for very short queries
+    }
+
     // ilike is a Case-Insensitive LIKE search.
     // For a "Senior" approach, we combine ilike with a simple rank
     return await db
@@ -76,7 +93,7 @@ export class ResourceService {
       .from(resources)
       .where(
         or(
-          ilike(resources.title, `%${query}%`),
+          ilike(resources.title, `%${sanitizedQuery}%`),
           // You could also search by course code if you join the courses table
         )
       )

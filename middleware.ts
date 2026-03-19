@@ -1,6 +1,7 @@
 import { betterFetch } from "@better-fetch/fetch";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Session } from "better-auth/types";
+import { addSecurityHeaders } from "@/lib/security";
 
 export default async function authMiddleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -18,15 +19,18 @@ export default async function authMiddleware(request: NextRequest) {
 
   // 2. Logic: If logged in, DON'T allow /login or /signup
   if (session && (pathname.startsWith("/login") || pathname.startsWith("/signup"))) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    const response = NextResponse.redirect(new URL("/dashboard", request.url));
+    return addSecurityHeaders(response);
   }
 
   // 3. Logic: If NOT logged in, DON'T allow /dashboard
   if (!session && pathname.startsWith("/dashboard")) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    const response = NextResponse.redirect(new URL("/login", request.url));
+    return addSecurityHeaders(response);
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  return addSecurityHeaders(response);
 }
 
 export const config = {
