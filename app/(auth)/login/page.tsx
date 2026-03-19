@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -24,7 +25,11 @@ export default function LoginPage() {
       onRequest: () => setLoading(true),
       onError: (ctx) => {
         setLoading(false);
-        alert(ctx.error.message);
+        if (ctx.error.status === 403 && ctx.error.message?.toLowerCase().includes("verified")) {
+          toast.error("Please verify your email address to log in.");
+        } else {
+          toast.error(ctx.error.message || "Failed to log in.");
+        }
       },
     });
   };
