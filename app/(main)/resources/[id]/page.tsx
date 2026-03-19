@@ -2,7 +2,7 @@ import { ResourceService } from "@/services/resource.service";
 import { CommentService } from "@/services/comment.service";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DownloadButton } from "@/components/resources/DownloadButton";
@@ -13,6 +13,11 @@ import { VoteButtons } from "@/components/resources/VoteButtons";
 export default async function ResourceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const session = await auth.api.getSession({ headers: await headers() });
+  
+  if (!session) {
+    redirect("/login");
+  }
+
   const resource = await ResourceService.findById(resolvedParams.id);
   const comments = await CommentService.getByResource(resolvedParams.id);
 

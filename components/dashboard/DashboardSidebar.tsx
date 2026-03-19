@@ -20,7 +20,7 @@ const navItems = [
   { label: "Assignments", value: "ASSIGNMENT", icon: GraduationCap },
 ];
 
-export function DashboardSidebar({ currentType }: { currentType?: string }) {
+export function DashboardSidebar({ currentType, isAuthenticated = true }: { currentType?: string, isAuthenticated?: boolean }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -74,7 +74,7 @@ export function DashboardSidebar({ currentType }: { currentType?: string }) {
             <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
               Have a paper that could help others? Upload it!
             </p>
-            <UploadResource />
+            <UploadResource isAuthenticated={isAuthenticated} />
           </div>
         </div>
       </div>

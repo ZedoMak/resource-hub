@@ -14,14 +14,10 @@ interface DashboardProps {
 }
 
 export default async function DashboardPage({ searchParams }: DashboardProps) {
-  // 1. Server-side Session Guard
+  // 1. Server-side Session Check (No Redirect)
   const session = await auth.api.getSession({
     headers: await headers(),
   });
-
-  if (!session) {
-    redirect("/login");
-  }
 
   // 2. Await searchParams (Next.js 15 requirement)
   const params = await searchParams;
@@ -38,7 +34,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border/40 pb-8 pt-4">
         <div className="space-y-2">
           <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-zinc-900 to-zinc-500 dark:from-zinc-100 dark:to-zinc-500">
-            Welcome back, {session.user.name.split(" ")[0]}
+            {session ? `Welcome back, ${session.user.name.split(" ")[0]}` : "Explore Resources"}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl">
             Explore, download, and contribute to your university hub.
@@ -47,7 +43,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
         <div className="flex items-center gap-3">
           <SearchBar />
           {/* Our professional upload modal trigger */}
-          <UploadResource />
+          <UploadResource isAuthenticated={!!session} />
         </div>
       </div>
 
@@ -55,7 +51,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
         {/* --- Desktop Sidebar --- */}
         <aside className="hidden lg:block relative">
           <div className="sticky top-24">
-            <DashboardSidebar currentType={params.type} />
+            <DashboardSidebar currentType={params.type} isAuthenticated={!!session} />
           </div>
         </aside>
 
@@ -90,7 +86,7 @@ export default async function DashboardPage({ searchParams }: DashboardProps) {
               <p className="text-muted-foreground max-w-md text-center mb-8">
                 We couldn't find any documents for this category. Be the first to start the collection and help your peers!
               </p>
-              <UploadResource />
+              <UploadResource isAuthenticated={!!session} />
             </div>
           )}
         </div>

@@ -21,8 +21,10 @@ import {
 import { UploadDropzone } from "@/lib/uploadthing";
 import { toast } from "sonner";
 import { Plus, FileIcon, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-export function UploadResource() {
+export function UploadResource({ isAuthenticated = true }: { isAuthenticated?: boolean }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -65,10 +67,18 @@ export function UploadResource() {
     }
   };
 
+  if (!isAuthenticated) {
+    return (
+      <Button className="w-full gap-2" onClick={() => router.push("/login")}>
+        <Plus className="h-4 w-4" /> Sign in to Upload
+      </Button>
+    )
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
+        <Button className="w-full gap-2 lg:w-auto">
           <Plus className="h-4 w-4" /> Upload Resource
         </Button>
       </DialogTrigger>

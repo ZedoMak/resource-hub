@@ -1,12 +1,12 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { 
-  FileText, 
-  Search, 
-  TrendingUp, 
-  Users, 
-  ShieldCheck, 
-  ArrowRight 
+import {
+  FileText,
+  Search,
+  TrendingUp,
+  Users,
+  ShieldCheck,
+  ArrowRight
 } from "lucide-react";
 
 export default function LandingPage() {
@@ -22,7 +22,7 @@ export default function LandingPage() {
           Master your exams with <span className="text-zinc-500">shared intelligence.</span>
         </h1>
         <p className="text-lg md:text-xl text-muted-foreground max-w-2xl">
-          The central hub for past exams, lecture notes, and study resources. 
+          The central hub for past exams, lecture notes, and study resources.
           Built by students, for students.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 mt-4">
@@ -31,7 +31,7 @@ export default function LandingPage() {
               Get Started <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </Link>
-          <Link href="/courses">
+          <Link href="/dashboard">
             <Button size="lg" variant="outline" className="h-12 px-8 text-base">
               Browse Resources
             </Button>
@@ -54,7 +54,7 @@ export default function LandingPage() {
             <div>
               <h3 className="text-2xl md:text-3xl font-bold mb-3 tracking-tight text-zinc-900 dark:text-zinc-100">Smart Search</h3>
               <p className="text-base text-zinc-600 dark:text-zinc-400 leading-relaxed max-w-xl">
-                Filter by university, department, or specific course codes. 
+                Filter by university, department, or specific course codes.
                 Find exactly what you need in seconds, not hours.
               </p>
             </div>
@@ -108,20 +108,20 @@ export default function LandingPage() {
             </div>
             <h3 className="text-3xl md:text-4xl font-bold mb-4 text-white tracking-tight">Verified by Peers</h3>
             <p className="text-lg text-zinc-400 leading-relaxed max-w-xl">
-              Each resource is upvoted and commented on by students who actually took the course. 
+              Each resource is upvoted and commented on by students who actually took the course.
               Say goodbye to irrelevant curriculum study material.
             </p>
           </div>
           <div className="flex -space-x-4 relative z-10 shrink-0">
-             {/* Styling Avatar pile mockup */}
-             {[1,2,3,4].map(i => (
-               <div key={i} className="h-14 w-14 rounded-full border-[3px] border-zinc-950 bg-gradient-to-br from-zinc-700 to-zinc-800 flex items-center justify-center text-sm font-bold text-zinc-300 shadow-xl transition-transform hover:-translate-y-2 hover:z-50 cursor-default">
-                 U{i}
-               </div>
-             ))}
-             <div className="h-14 w-14 rounded-full border-[3px] border-zinc-950 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-xl z-20">
-               +9k
-             </div>
+            {/* Styling Avatar pile mockup */}
+            {[1, 2, 3, 4].map(i => (
+              <div key={i} className="h-14 w-14 rounded-full border-[3px] border-zinc-950 bg-gradient-to-br from-zinc-700 to-zinc-800 flex items-center justify-center text-sm font-bold text-zinc-300 shadow-xl transition-transform hover:-translate-y-2 hover:z-50 cursor-default">
+                U{i}
+              </div>
+            ))}
+            <div className="h-14 w-14 rounded-full border-[3px] border-zinc-950 bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white shadow-xl z-20">
+              +9k
+            </div>
           </div>
         </div>
       </section>
@@ -156,7 +156,7 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/40 via-purple-500/20 to-pink-500/40 opacity-50 mix-blend-color-dodge" />
           <div className="absolute -top-1/2 -right-1/4 w-[1000px] h-[1000px] rounded-full bg-gradient-to-bl from-indigo-500/30 to-transparent blur-3xl opacity-50" />
           <div className="absolute -bottom-1/2 -left-1/4 w-[800px] h-[800px] rounded-full bg-gradient-to-tr from-purple-500/30 to-transparent blur-3xl opacity-50" />
-          
+
           <div className="relative z-10 px-6 py-24 sm:px-16 md:py-32 flex flex-col items-center text-center gap-8 backdrop-blur-sm border border-white/10 rounded-[3rem]">
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white max-w-3xl">
               Ready to ace your next exam?
@@ -170,8 +170,8 @@ export default function LandingPage() {
                   Create Free Account
                 </Button>
               </Link>
-              <Link href="/courses">
-                <Button size="lg" variant="outline" className="h-14 px-10 text-lg text-white border-white/20 hover:bg-white/10 hover:text-white backdrop-blur-md transition-all">
+              <Link href="/dashboard">
+                <Button size="lg" variant="outline" className="h-14 px-10 text-lg text-white border-white/20 hover:bg-white/10 hover:text-white backdrop-blur-md transition-all bg-violet">
                   Browse Guest Resources
                 </Button>
               </Link>

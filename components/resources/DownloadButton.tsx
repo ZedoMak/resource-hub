@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface DownloadButtonProps {
   resourceId: string;
@@ -23,6 +24,8 @@ export function DownloadButton({
 }: DownloadButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
+  const router = useRouter();
+
   const handleDownload = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -38,6 +41,9 @@ export function DownloadButton({
       if (!res.ok) {
         if (res.status === 401) {
           toast.error("Please sign in to log downloads.");
+          router.push("/login");
+          setIsLoading(false);
+          return; // STOP DOWNLOAD
         }
       }
 
