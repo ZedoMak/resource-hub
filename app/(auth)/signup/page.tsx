@@ -91,6 +91,9 @@ export default function SignupPage() {
           Login
         </Link>
       </p>
+      <p className="px-8 text-center  text-sm text-muted-foreground">
+        By creating and joining our community you agree to the <Link href="/terms" className="hover:text-brand underline underline-offset-4">Terms and Conditions</Link>
+      </p>
     </div>
   );
 }

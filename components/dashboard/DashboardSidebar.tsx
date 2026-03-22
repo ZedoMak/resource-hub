@@ -50,9 +50,9 @@ export function DashboardSidebar({ currentType, isAuthenticated = true }: { curr
                   : "ghost"
               }
               className={cn(
-                "w-full justify-start gap-3 px-4 py-2.5 text-sm font-medium transition-all rounded-xl",
+                "w-full justify-start gap-3 px-4 py-2.5 text-sm font-medium transition-all rounded-xl ",
                 (currentType === item.value || (!currentType && item.value === "ALL"))
-                  ? "bg-primary text-primary-foreground shadow-sm"
+                  ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}
               onClick={() => handleFilter(item.value)}

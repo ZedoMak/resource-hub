@@ -9,6 +9,8 @@ import {
   ArrowRight
 } from "lucide-react";
 
+
+
 export default function LandingPage() {
   return (
     <div className="flex flex-col gap-20 pb-20">
@@ -32,7 +34,7 @@ export default function LandingPage() {
             </Button>
           </Link>
           <Link href="/dashboard">
-            <Button size="lg" variant="outline" className="h-12 px-8 text-base">
+            <Button size="lg" variant="outline" className="h-12 px-8 text-base cursor-pointer">
               Browse Resources
             </Button>
           </Link>
@@ -138,7 +140,7 @@ export default function LandingPage() {
             <p className="text-sm md:text-base font-semibold text-zinc-500 tracking-widest uppercase">Universities</p>
           </div>
           <div className="group">
-            <p className="text-5xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-b from-zinc-900 to-zinc-500 dark:from-white dark:to-zinc-500 transition-transform group-hover:scale-110 duration-300 mb-2">8k+</p>
+            <p className="text-5xl md:text-6xl font-black bg-clip-text text-transparent bg-gradient-to-b from-zinc-900 to-zinc-500 dark:from-white dark:to-zinc-500 transition-transform group-hover:scale-110 duration-300 mb-2">2k+</p>
             <p className="text-sm md:text-base font-semibold text-zinc-500 tracking-widest uppercase">Active Users</p>
           </div>
           <div className="group">
@@ -170,11 +172,13 @@ export default function LandingPage() {
                   Create Free Account
                 </Button>
               </Link>
-              <Link href="/dashboard">
+
+              {/* i'll be working on this in the future */}
+              {/* <Link href="/dashboard">
                 <Button size="lg" variant="outline" className="h-14 px-10 text-lg text-white border-white/20 hover:bg-white/10 hover:text-white backdrop-blur-md transition-all bg-violet">
                   Browse Guest Resources
                 </Button>
-              </Link>
+              </Link> */}
             </div>
           </div>
         </div>

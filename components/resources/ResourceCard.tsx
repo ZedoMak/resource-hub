@@ -44,7 +44,9 @@ export function ResourceCard({ resource }: ResourceCardProps) {
       </CardContent>
       <CardFooter className="border-t pt-4 flex justify-between">
         <Button variant="ghost" size="sm" className="h-8 text-xs">
-          View Details
+          <Link href={`/resources/${resource.id}`} className="hover:underline">
+            View Detail
+          </Link>
         </Button>
         <DownloadButton resourceId={resource.id} fileUrl={resource.fileUrl} size="sm" className="h-8 text-xs gap-1">
           <Download className="h-3 w-3" /> Download

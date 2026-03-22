@@ -2,6 +2,7 @@ import { betterFetch } from "@better-fetch/fetch";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Session } from "better-auth/types";
 import { addSecurityHeaders } from "@/lib/security";
+import { Search } from "lucide-react";
 
 export default async function authMiddleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -17,6 +18,8 @@ export default async function authMiddleware(request: NextRequest) {
     }
   );
 
+
+
   // 2. Logic: If logged in, DON'T allow /login or /signup
   if (session && (pathname.startsWith("/login") || pathname.startsWith("/signup"))) {
     const response = NextResponse.redirect(new URL("/dashboard", request.url));
@@ -25,6 +28,9 @@ export default async function authMiddleware(request: NextRequest) {
 
   // 3. Logic: If NOT logged in, DON'T allow /dashboard
   if (!session && pathname.startsWith("/dashboard")) {
+
+    const loginUrl = new URL("/login", request.url)
+    loginUrl.searchParams.set("redirect", `${pathname}${Search}`)
     const response = NextResponse.redirect(new URL("/login", request.url));
     return addSecurityHeaders(response);
   }

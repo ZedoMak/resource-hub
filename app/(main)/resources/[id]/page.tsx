@@ -9,6 +9,7 @@ import { DownloadButton } from "@/components/resources/DownloadButton";
 import { Download, MessageSquare, Share2 } from "lucide-react";
 import { CommentSection } from "@/components/resources/CommentSection";
 import { VoteButtons } from "@/components/resources/VoteButtons";
+import ShareButton from "../../share/page";
 
 export default async function ResourceDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
@@ -80,9 +81,7 @@ export default async function ResourceDetailPage({ params }: { params: Promise<{
               initialUpvotes={resource.upvotes}
               initialDownvotes={resource.downvotes}
             />
-            <Button variant="outline" className="w-full h-11 gap-2 border-zinc-200">
-              <Share2 className="h-4 w-4" /> Share
-            </Button>
+            <ShareButton />
           </div>
 
           <div className="mt-8 pt-8 border-t border-zinc-50 space-y-4">

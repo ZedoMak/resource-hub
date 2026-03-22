@@ -7,9 +7,14 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { redirect } from "next/dist/server/api-utils";
+import {useRouter, useSearchParams} from "next/navigation"
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const redirect = searchParams.get("redirect") || "/"
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -32,6 +37,8 @@ export default function LoginPage() {
         }
       },
     });
+
+    router.push(redirect)
   };
 
   return (
