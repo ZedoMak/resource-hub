@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, CheckCircle2, KeyRound, Loader2, Trash2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, KeyRound, Loader2, ShieldAlert, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +33,8 @@ interface SupportedProvider {
 interface ProvidersResponse {
   providers: SavedProvider[];
   supportedProviders: SupportedProvider[];
+  keyStorageConfigured: boolean;
+  configurationError?: string | null;
 }
 
 const ERROR_COPY: Record<string, string> = {
@@ -41,6 +43,7 @@ const ERROR_COPY: Record<string, string> = {
   UPSTREAM_UNAVAILABLE: "The provider could not validate the key right now. Please try again shortly.",
   MISSING_API_KEY: "Enter an API key before testing and saving.",
   INVALID_PROVIDER: "Choose a supported AI provider before saving.",
+  AI_KEY_STORAGE_NOT_CONFIGURED: "This server cannot store AI keys yet. Add AI_KEY_ENCRYPTION_SECRET with at least 16 characters, then try again.",
 };
 
 function formatDate(value: string | null): string {
@@ -75,6 +78,8 @@ export function AIProviderKeysForm() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [deletingProvider, setDeletingProvider] = useState<AIProvider | null>(null);
+  const [isKeyStorageConfigured, setIsKeyStorageConfigured] = useState(true);
+  const [configurationError, setConfigurationError] = useState<string | null>(null);
   const [inlineMessage, setInlineMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
 
   const selectedProviderConfig = useMemo(() => {
@@ -101,6 +106,8 @@ export function AIProviderKeysForm() {
 
       setProviders(payload.providers ?? []);
       setSupportedProviders(payload.supportedProviders ?? []);
+      setIsKeyStorageConfigured(payload.keyStorageConfigured ?? true);
+      setConfigurationError(payload.configurationError ?? null);
 
       const defaultProvider = payload.supportedProviders?.[0]?.id;
       if (defaultProvider) {
@@ -118,6 +125,13 @@ export function AIProviderKeysForm() {
   }, [loadProviders]);
 
   const handleSave = async () => {
+    if (!isKeyStorageConfigured) {
+      const message = configurationError ?? ERROR_COPY.AI_KEY_STORAGE_NOT_CONFIGURED;
+      setInlineMessage({ tone: "error", text: message });
+      toast.error(message);
+      return;
+    }
+
     if (!apiKey.trim()) {
       const message = ERROR_COPY.MISSING_API_KEY;
       setInlineMessage({ tone: "error", text: message });
@@ -201,7 +215,7 @@ export function AIProviderKeysForm() {
 
   return (
     <div className="space-y-8">
-      <div className="space-y-2 max-w-3xl">
+      <div className="max-w-3xl space-y-2">
         <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">AI providers</h2>
         <p className="text-sm text-muted-foreground">
           Save your own provider keys for future AI-powered features. Keys are validated before saving and only masked fingerprints are ever shown back to you.
@@ -216,11 +230,18 @@ export function AIProviderKeysForm() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
+          {!isKeyStorageConfigured ? (
+            <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200">
+              <ShieldAlert className="mt-0.5 size-4 shrink-0" />
+              <p>{configurationError ?? ERROR_COPY.AI_KEY_STORAGE_NOT_CONFIGURED}</p>
+            </div>
+          ) : null}
+
           <div className="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)]">
             <div className="space-y-2">
               <Label htmlFor="ai-provider">Provider</Label>
               <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as AIProvider)}>
-                <SelectTrigger id="ai-provider" className="w-full h-11">
+                <SelectTrigger id="ai-provider" className="h-11 w-full">
                   <SelectValue placeholder="Select a provider" />
                 </SelectTrigger>
                 <SelectContent>
@@ -270,7 +291,7 @@ export function AIProviderKeysForm() {
           ) : null}
 
           <div className="flex flex-wrap gap-3">
-            <Button onClick={handleSave} disabled={isSaving || isLoading} size="lg" className="h-11 px-6">
+            <Button onClick={handleSave} disabled={isSaving || isLoading || !isKeyStorageConfigured} size="lg" className="h-11 px-6">
               {isSaving ? <Loader2 className="animate-spin" /> : <KeyRound />}
               {isSaving ? "Testing key..." : "Test & Save"}
             </Button>

@@ -6,7 +6,7 @@ import { nanoid } from "nanoid";
 import { db } from "@/db";
 import { aiProviderKeys } from "@/db/schema";
 import { auth } from "@/lib/auth";
-import { encryptApiKey, maskApiKey } from "@/lib/ai/crypto";
+import { encryptApiKey, getAIEncryptionConfigurationError, maskApiKey } from "@/lib/ai/crypto";
 import { getAIProvider, isAIProvider, listAIProviders } from "@/lib/ai/providers";
 import { checkRateLimit, rateLimitPolicies, withRateLimitHeaders } from "@/lib/rate-limit";
 import { handleApiError } from "@/lib/security";
@@ -61,6 +61,8 @@ export async function GET(req: NextRequest) {
       NextResponse.json({
         providers: savedProviders.map(toSafeProviderResponse),
         supportedProviders: listAIProviders().map(({ id, label }) => ({ id, label })),
+        keyStorageConfigured: !getAIEncryptionConfigurationError(),
+        configurationError: getAIEncryptionConfigurationError(),
       }),
       state,
     );
@@ -101,6 +103,21 @@ export async function POST(req: NextRequest) {
     if (!apiKey) {
       return withRateLimitHeaders(
         NextResponse.json({ error: "API key is required", code: "MISSING_API_KEY" }, { status: 400 }),
+        state,
+      );
+    }
+
+    const configurationError = getAIEncryptionConfigurationError();
+
+    if (configurationError) {
+      return withRateLimitHeaders(
+        NextResponse.json(
+          {
+            error: configurationError,
+            code: "AI_KEY_STORAGE_NOT_CONFIGURED",
+          },
+          { status: 503 },
+        ),
         state,
       );
     }

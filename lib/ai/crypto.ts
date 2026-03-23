@@ -8,12 +8,24 @@ const VERSION = "v1";
 const IV_LENGTH = 12;
 const SALT_LENGTH = 16;
 
-function ensureSecret(): string {
+export const AI_KEY_ENCRYPTION_CONFIG_ERROR = "AI key storage is not configured on the server. Add AI_KEY_ENCRYPTION_SECRET with at least 16 characters.";
+
+export function getAIEncryptionConfigurationError(): string | null {
   if (!ENCRYPTION_SECRET || ENCRYPTION_SECRET.trim().length < 16) {
-    throw new Error("AI_KEY_ENCRYPTION_SECRET must be configured with at least 16 characters");
+    return AI_KEY_ENCRYPTION_CONFIG_ERROR;
   }
 
-  return ENCRYPTION_SECRET;
+  return null;
+}
+
+function ensureSecret(): string {
+  const configurationError = getAIEncryptionConfigurationError();
+
+  if (configurationError) {
+    throw new Error(configurationError);
+  }
+
+  return ENCRYPTION_SECRET as string;
 }
 
 function toBase64Url(buffer: Buffer): string {
