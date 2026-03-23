@@ -1,45 +1,58 @@
 import { betterFetch } from "@better-fetch/fetch";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Session } from "better-auth/types";
-import { addSecurityHeaders } from "@/lib/security";
-import { Search } from "lucide-react";
+import { addSecurityHeaders, createSecurityContext } from "@/lib/security";
 
-export default async function authMiddleware(request: NextRequest) {
+const AUTH_ENTRY_MATCHERS = ["/dashboard", "/login", "/signup"];
+
+function shouldCheckSession(pathname: string) {
+  return AUTH_ENTRY_MATCHERS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
+}
+
+export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const securityContext = createSecurityContext(request);
 
-  // 1. Get the session
-  const { data: session } = await betterFetch<Session>(
-    "/api/auth/get-session",
-    {
-      baseURL: request.nextUrl.origin,
-      headers: {
-        cookie: request.headers.get("cookie") || "",
+  if (!shouldCheckSession(pathname)) {
+    const response = NextResponse.next({
+      request: {
+        headers: securityContext.requestHeaders,
       },
-    }
-  );
+    });
 
+    return addSecurityHeaders(response, securityContext);
+  }
 
+  const { data: session } = await betterFetch<Session>("/api/auth/get-session", {
+    baseURL: request.nextUrl.origin,
+    headers: {
+      cookie: request.headers.get("cookie") || "",
+    },
+  });
 
-  // 2. Logic: If logged in, DON'T allow /login or /signup
   if (session && (pathname.startsWith("/login") || pathname.startsWith("/signup"))) {
-    const response = NextResponse.redirect(new URL("/dashboard", request.url));
-    return addSecurityHeaders(response);
+    return addSecurityHeaders(
+      NextResponse.redirect(new URL("/dashboard", request.url)),
+      securityContext,
+    );
   }
 
-  // 3. Logic: If NOT logged in, DON'T allow /dashboard
   if (!session && pathname.startsWith("/dashboard")) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("redirect", pathname);
 
-    const loginUrl = new URL("/login", request.url)
-    loginUrl.searchParams.set("redirect", `${pathname}${Search}`)
-    const response = NextResponse.redirect(new URL("/login", request.url));
-    return addSecurityHeaders(response);
+    return addSecurityHeaders(NextResponse.redirect(loginUrl), securityContext);
   }
 
-  const response = NextResponse.next();
-  return addSecurityHeaders(response);
+  const response = NextResponse.next({
+    request: {
+      headers: securityContext.requestHeaders,
+    },
+  });
+
+  return addSecurityHeaders(response, securityContext);
 }
 
 export const config = {
-  // Run middleware on auth pages and dashboard
-  matcher: ["/dashboard/:path*", "/login", "/signup"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|public).*)"],
 };
