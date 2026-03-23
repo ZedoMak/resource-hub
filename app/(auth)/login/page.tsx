@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
 
+const emailVerificationEnabled = process.env.NEXT_PUBLIC_ENABLE_EMAIL_VERIFICATION === "true";
+
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
@@ -32,7 +34,11 @@ export default function LoginPage() {
         onRequest: () => setLoading(true),
         onError: (ctx) => {
           setLoading(false);
-          if (ctx.error.status === 403 && ctx.error.message?.toLowerCase().includes("verified")) {
+          if (
+            emailVerificationEnabled &&
+            ctx.error.status === 403 &&
+            ctx.error.message?.toLowerCase().includes("verified")
+          ) {
             toast.error("Please verify your email address to log in.");
           } else {
             toast.error(ctx.error.message || "Failed to log in.");

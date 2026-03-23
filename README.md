@@ -43,6 +43,11 @@ DATABASE_URL="postgresql://[user]:[password]@[host]/[dbname]?sslmode=require"
 # Authentication
 BETTER_AUTH_SECRET="your-super-secret-key"
 BETTER_AUTH_URL="http://localhost:3000"
+ENABLE_EMAIL_VERIFICATION="false"
+NEXT_PUBLIC_ENABLE_EMAIL_VERIFICATION="false"
+
+# Email (only needed when ENABLE_EMAIL_VERIFICATION=true)
+RESEND_API_KEY="re_..."
 
 # Application URL
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
@@ -50,6 +55,13 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 # File Uploads (v7 format required)
 UPLOADTHING_TOKEN="eyJ..."
 ```
+
+Set `ENABLE_EMAIL_VERIFICATION=false` for free deployments until you have a verified sending domain configured. Mirror that value in `NEXT_PUBLIC_ENABLE_EMAIL_VERIFICATION` so the client-side auth screens match the server behavior.
+
+If you do not own a sending domain yet, a few practical alternatives are:
+- use OAuth-only signup temporarily and disable password signup verification
+- switch to an SMTP provider/account you already control
+- keep verification off for beta, but compensate with stricter rate limiting and abuse controls on signup/login
 
 *(Note: Ensure your UploadThing Token is correctly formatted from the v7 dashboard. The legacy `SECRET` and `APP_ID` are no longer supported).*
 
