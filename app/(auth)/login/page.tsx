@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -12,7 +12,7 @@ import { authClient } from "@/lib/auth-client";
 
 const emailVerificationEnabled = process.env.NEXT_PUBLIC_ENABLE_EMAIL_VERIFICATION === "true";
 
-export default function LoginPage() {
+function LoginForm() {
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -34,6 +34,7 @@ export default function LoginPage() {
         onRequest: () => setLoading(true),
         onError: (ctx) => {
           setLoading(false);
+
           if (
             emailVerificationEnabled &&
             ctx.error.status === 403 &&
@@ -63,14 +64,30 @@ export default function LoginPage() {
           <Label className="sr-only" htmlFor="email">
             Email
           </Label>
-          <Input id="email" name="email" type="email" placeholder="name@example.com" disabled={loading} required />
+          <Input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="name@example.com"
+            disabled={loading}
+            required
+          />
         </div>
+
         <div className="grid gap-1">
           <Label className="sr-only" htmlFor="password">
             Password
           </Label>
-          <Input id="password" name="password" type="password" placeholder="Password" disabled={loading} required />
+          <Input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="Password"
+            disabled={loading}
+            required
+          />
         </div>
+
         <Button className="w-full" disabled={loading}>
           {loading ? "Logging in..." : "Log In"}
         </Button>
@@ -83,5 +100,14 @@ export default function LoginPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  // Keep useSearchParams inside Suspense to avoid the App Router prerender bailout on /login.
+  return (
+    <Suspense fallback={<div className="text-center text-sm text-muted-foreground">Loading login…</div>}>
+      <LoginForm />
+    </Suspense>
   );
 }
