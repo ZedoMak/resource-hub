@@ -1,10 +1,13 @@
+import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { handleApiError } from "@/lib/security";
+
 import { db } from "@/db";
 import { user } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { auth } from "@/lib/auth";
+import { checkRateLimit, rateLimitPolicies, withRateLimitHeaders } from "@/lib/rate-limit";
+import { handleApiError } from "@/lib/security";
+
 export const maxDuration = 10;
 
 export async function PATCH(req: NextRequest) {
@@ -17,22 +20,38 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { state, response } = await checkRateLimit({
+      req,
+      policy: rateLimitPolicies.profileWrite,
+      userId: session.user.id,
+    });
+
+    if (response) {
+      return response;
+    }
+
     const body = await req.json();
     const { name, image } = body;
 
     if (!name || typeof name !== "string") {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+      return withRateLimitHeaders(
+        NextResponse.json({ error: "Name is required" }, { status: 400 }),
+        state,
+      );
     }
 
-    // Update the database record using Better Auth's raw user table through drizzle
-    await db.update(user)
-      .set({ 
-        name: name.trim(), 
-        ...(image && { image }) 
+    await db
+      .update(user)
+      .set({
+        name: name.trim(),
+        ...(image && { image }),
       })
       .where(eq(user.id, session.user.id));
 
-    return NextResponse.json({ success: true, name: name.trim(), image });
+    return withRateLimitHeaders(
+      NextResponse.json({ success: true, name: name.trim(), image }),
+      state,
+    );
   } catch (error) {
     return handleApiError(error);
   }

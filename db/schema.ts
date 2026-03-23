@@ -1,4 +1,4 @@
-import { pgTable, timestamp, boolean, text,integer, pgEnum, index, unique } from "drizzle-orm/pg-core";
+import { pgTable, timestamp, boolean, text, integer, pgEnum, index, unique } from "drizzle-orm/pg-core";
 
 export const user = pgTable("users", {
     id: text("id").primaryKey(),
@@ -108,4 +108,15 @@ export const comments = pgTable("comments", {
   // Indexing resourceId is CRITICAL. 
   // We will always fetch comments "WHERE resource_id = X".
   resourceIdx: index("comment_resource_idx").on(table.resourceId),
+}));
+
+export const rateLimitBuckets = pgTable("rate_limit_buckets", {
+  bucketKey: text("bucket_key").primaryKey(),
+  policyId: text("policy_id").notNull(),
+  requestCount: integer("request_count").default(0).notNull(),
+  resetAt: timestamp("reset_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  policyResetIdx: index("rate_limit_policy_reset_idx").on(table.policyId, table.resetAt),
 }));
