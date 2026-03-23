@@ -1,6 +1,8 @@
-import { createUploadthing, type FileRouter } from "uploadthing/next";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { createUploadthing, type FileRouter } from "uploadthing/next";
+
+import { auth } from "@/lib/auth";
+import { checkRateLimit, rateLimitPolicies } from "@/lib/rate-limit";
 import { normalizeTrustedUploadThingFileUrl } from "@/lib/trusted-resource-url";
 import { createTrustedUploadToken } from "@/lib/trusted-upload-token";
 
@@ -8,7 +10,7 @@ const f = createUploadthing();
 
 export const ourFileRouter = {
   pdfUploader: f({ pdf: { maxFileSize: "16MB", maxFileCount: 1 } })
-    .middleware(async () => {
+    .middleware(async ({ req }) => {
       try {
         const session = await auth.api.getSession({
           headers: await headers(),
@@ -17,6 +19,18 @@ export const ourFileRouter = {
         if (!session) {
           console.error("UploadThing: No session found");
           throw new Error("Unauthorized");
+        }
+
+        const { response } = await checkRateLimit({
+          req,
+          policy: rateLimitPolicies.uploadthing,
+          userId: session.user.id,
+        });
+
+        if (response) {
+          const error = new Error("Too many requests");
+          error.cause = { status: 429, retryAfter: response.headers.get("Retry-After") };
+          throw error;
         }
 
         console.log("UploadThing: Session verified for user:", session.user.id);
@@ -45,9 +59,22 @@ export const ourFileRouter = {
     }),
 
   imageUploader: f({ image: { maxFileSize: "4MB", maxFileCount: 1 } })
-    .middleware(async () => {
+    .middleware(async ({ req }) => {
       const session = await auth.api.getSession({ headers: await headers() });
       if (!session) throw new Error("Unauthorized");
+
+      const { response } = await checkRateLimit({
+        req,
+        policy: rateLimitPolicies.uploadthing,
+        userId: session.user.id,
+      });
+
+      if (response) {
+        const error = new Error("Too many requests");
+        error.cause = { status: 429, retryAfter: response.headers.get("Retry-After") };
+        throw error;
+      }
+
       return { userId: session.user.id };
     })
     .onUploadComplete(async ({ metadata, file }) => {

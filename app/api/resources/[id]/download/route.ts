@@ -1,15 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ResourceService } from "@/services/resource.service";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+
+import { auth } from "@/lib/auth";
+import { checkRateLimit, rateLimitPolicies, withRateLimitHeaders } from "@/lib/rate-limit";
 import { handleApiError } from "@/lib/security";
+import { ResourceService } from "@/services/resource.service";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    // Authenticate the user
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -18,20 +19,38 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { state, response } = await checkRateLimit({
+      req,
+      policy: rateLimitPolicies.downloadsWrite,
+      userId: session.user.id,
+    });
+
+    if (response) {
+      return response;
+    }
+
     const resolvedParams = await params;
 
-    // Validate resource ID format
     if (!resolvedParams.id || resolvedParams.id.length < 6) {
-      return NextResponse.json({ error: "Invalid resource ID" }, { status: 400 });
+      return withRateLimitHeaders(
+        NextResponse.json({ error: "Invalid resource ID" }, { status: 400 }),
+        state,
+      );
     }
 
     const resource = await ResourceService.trackDownload(resolvedParams.id);
-    
+
     if (!resource || resource.length === 0) {
-      return NextResponse.json({ error: "Resource not found" }, { status: 404 });
+      return withRateLimitHeaders(
+        NextResponse.json({ error: "Resource not found" }, { status: 404 }),
+        state,
+      );
     }
 
-    return NextResponse.json({ success: true, score: resource[0].newScore });
+    return withRateLimitHeaders(
+      NextResponse.json({ success: true, score: resource[0].newScore }),
+      state,
+    );
   } catch (error) {
     return handleApiError(error);
   }
