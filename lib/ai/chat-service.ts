@@ -4,7 +4,7 @@ import { and, asc, desc, eq } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 import { db } from "@/db";
-import { aiConversations, aiMessages, aiProviderKeys, resources } from "@/db/schema";
+import { aiConversations, aiMessages, aiProviderKeys, courses, resources } from "@/db/schema";
 import { decryptApiKey } from "@/lib/ai/crypto";
 import { getAIProvider, type AIProvider } from "@/lib/ai/providers";
 
@@ -39,6 +39,8 @@ export interface ResourceContext {
   id: string;
   title: string;
   type: string;
+  courseCode: string | null;
+  courseName: string | null;
 }
 
 export interface ChatCompletionRequest {
@@ -129,7 +131,14 @@ function buildSystemPrompt(resourceContext?: ResourceContext | null): string {
     return baseInstruction;
   }
 
-  return `${baseInstruction}\n\nRelevant resource context:\n- Resource ID: ${resourceContext.id}\n- Title: ${resourceContext.title}\n- Type: ${resourceContext.type}`;
+  return `${baseInstruction}
+
+Relevant resource context:
+- Resource ID: ${resourceContext.id}
+- Title: ${resourceContext.title}
+- Course code: ${resourceContext.courseCode ?? "Unknown"}
+- Course name: ${resourceContext.courseName ?? "Unknown"}
+- Type: ${resourceContext.type}`;
 }
 
 function normalizeHistory(history: ChatHistoryMessage[], latestMessage: string, resourceContext?: ResourceContext | null): ChatHistoryMessage[] {
@@ -310,14 +319,19 @@ export async function getConversationForUser(userId: string, conversationId: str
 }
 
 export async function getResourceContext(resourceId: string) {
-  const resource = await db.query.resources.findFirst({
-    where: eq(resources.id, resourceId),
-    columns: {
-      id: true,
-      title: true,
-      type: true,
-    },
-  });
+  const resource = await db
+    .select({
+      id: resources.id,
+      title: resources.title,
+      type: resources.type,
+      courseCode: courses.code,
+      courseName: courses.name,
+    })
+    .from(resources)
+    .leftJoin(courses, eq(resources.courseId, courses.id))
+    .where(eq(resources.id, resourceId))
+    .limit(1)
+    .then((rows) => rows[0] ?? null);
 
   if (!resource) {
     throw new ChatServiceError(AI_CHAT_ERROR_CODES.notFound, "Resource not found", 404);
