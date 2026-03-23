@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "audit:resource-urls": "tsx scripts/audit-resource-file-urls.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.2",

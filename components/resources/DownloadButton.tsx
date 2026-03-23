@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { isTrustedUploadThingFileUrl } from "@/lib/trusted-resource-url";
 
 interface DownloadButtonProps {
   resourceId: string;
@@ -20,17 +21,22 @@ export function DownloadButton({
   className,
   variant = "default",
   size = "default",
-  children
+  children,
 }: DownloadButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
-
   const router = useRouter();
 
   const handleDownload = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (isLoading) return;
+
+    if (!isTrustedUploadThingFileUrl(fileUrl)) {
+      toast.error("This file is hosted on an untrusted domain and cannot be opened.");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -38,17 +44,14 @@ export function DownloadButton({
         method: "POST",
       });
 
-      if (!res.ok) {
-        if (res.status === 401) {
-          toast.error("Please sign in to log downloads.");
-          router.push("/login");
-          setIsLoading(false);
-          return; // STOP DOWNLOAD
-        }
+      if (!res.ok && res.status === 401) {
+        toast.error("Please sign in to log downloads.");
+        router.push("/login");
+        setIsLoading(false);
+        return;
       }
 
-      // Download actual file
-      window.open(fileUrl, "_blank");
+      window.open(fileUrl, "_blank", "noopener,noreferrer");
     } catch (error) {
       console.error(error);
       toast.error("An error occurred while attempting to download.");
@@ -58,13 +61,7 @@ export function DownloadButton({
   };
 
   return (
-    <Button 
-      variant={variant} 
-      size={size} 
-      className={className} 
-      onClick={handleDownload}
-      disabled={isLoading}
-    >
+    <Button variant={variant} size={size} className={className} onClick={handleDownload} disabled={isLoading}>
       {children}
     </Button>
   );

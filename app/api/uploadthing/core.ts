@@ -1,17 +1,17 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { normalizeTrustedUploadThingFileUrl } from "@/lib/trusted-resource-url";
+import { createTrustedUploadToken } from "@/lib/trusted-upload-token";
 
 const f = createUploadthing();
 
 export const ourFileRouter = {
-  // a "pdfUploader" endpoint
   pdfUploader: f({ pdf: { maxFileSize: "16MB", maxFileCount: 1 } })
     .middleware(async () => {
       try {
-        // Use Better Auth to protect the route
         const session = await auth.api.getSession({
-          headers: await headers()
+          headers: await headers(),
         });
 
         if (!session) {
@@ -27,13 +27,23 @@ export const ourFileRouter = {
       }
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      console.log("Upload complete for userId:", metadata.userId);
-      console.log("File URL:", file.url);
-      console.log("File name:", file.name);
-      console.log("File size:", file.size);
+      const trustedFile = normalizeTrustedUploadThingFileUrl(file.ufsUrl ?? file.url);
+
+      if (!trustedFile) {
+        throw new Error("UploadThing returned an unexpected file host");
+      }
+
+      return {
+        fileKey: trustedFile.fileKey,
+        fileUrl: trustedFile.fileUrl,
+        uploadToken: createTrustedUploadToken({
+          fileKey: trustedFile.fileKey,
+          fileUrl: trustedFile.fileUrl,
+          userId: metadata.userId,
+        }),
+      };
     }),
-  
-  // an "imageUploader" endpoint for profile pictures
+
   imageUploader: f({ image: { maxFileSize: "4MB", maxFileCount: 1 } })
     .middleware(async () => {
       const session = await auth.api.getSession({ headers: await headers() });
@@ -42,6 +52,9 @@ export const ourFileRouter = {
     })
     .onUploadComplete(async ({ metadata, file }) => {
       console.log("Image upload complete for userId:", metadata.userId);
+      return {
+        fileUrl: file.ufsUrl ?? file.url,
+      };
     }),
 } satisfies FileRouter;
 
