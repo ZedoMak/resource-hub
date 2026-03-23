@@ -47,15 +47,10 @@ const ERROR_COPY: Record<string, string> = {
 };
 
 function formatDate(value: string | null): string {
-  if (!value) {
-    return "Never";
-  }
+  if (!value) return "Never";
 
   const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Unknown";
-  }
+  if (Number.isNaN(date.getTime())) return "Unknown";
 
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: "medium",
@@ -88,6 +83,8 @@ export function AIProviderKeysForm() {
       label: selectedProvider,
     };
   }, [selectedProvider, supportedProviders]);
+
+  const activeProviderCount = providers.filter((provider) => provider.status === "active").length;
 
   const loadProviders = useCallback(async () => {
     setIsLoading(true);
@@ -214,34 +211,42 @@ export function AIProviderKeysForm() {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="max-w-3xl space-y-2">
-        <h2 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">AI providers</h2>
-        <p className="text-sm text-muted-foreground">
-          Save your own provider keys for future AI-powered features. Keys are validated before saving and only masked fingerprints are ever shown back to you.
-        </p>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Badge variant="outline" className="rounded-full border-zinc-200 bg-white px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+          AI providers
+        </Badge>
+        <div className="space-y-1">
+          <h2 className="text-2xl font-semibold tracking-tight text-zinc-900">Bring your own AI key</h2>
+          <p className="text-sm leading-6 text-zinc-500">
+            Keep this area compact and readable while still giving you quick control over validation, replacement, and status.
+          </p>
+        </div>
       </div>
 
-      <Card className="border border-zinc-200/80 shadow-sm">
-        <CardHeader>
-          <CardTitle>Test &amp; save a provider key</CardTitle>
-          <CardDescription>
-            Pick a provider, paste a key, and we&apos;ll verify it before storing an encrypted copy on the server.
-          </CardDescription>
+      <Card className="rounded-3xl border-zinc-200/80 shadow-sm">
+        <CardHeader className="gap-4 border-b border-zinc-100 pb-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle>Connect a provider</CardTitle>
+            <CardDescription>Validate a key first, then store an encrypted copy for future AI features.</CardDescription>
+          </div>
+          <Badge variant="outline" className="rounded-full border-zinc-200 bg-zinc-50 px-3 py-1 text-zinc-600">
+            {activeProviderCount} active
+          </Badge>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-4 pt-6">
           {!isKeyStorageConfigured ? (
-            <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200">
+            <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               <ShieldAlert className="mt-0.5 size-4 shrink-0" />
               <p>{configurationError ?? ERROR_COPY.AI_KEY_STORAGE_NOT_CONFIGURED}</p>
             </div>
           ) : null}
 
-          <div className="grid gap-5 md:grid-cols-[220px_minmax(0,1fr)]">
+          <div className="grid gap-4 lg:grid-cols-[11rem_minmax(0,1fr)]">
             <div className="space-y-2">
               <Label htmlFor="ai-provider">Provider</Label>
               <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as AIProvider)}>
-                <SelectTrigger id="ai-provider" className="h-11 w-full">
+                <SelectTrigger id="ai-provider" className="h-11 rounded-2xl border-zinc-200 bg-white">
                   <SelectValue placeholder="Select a provider" />
                 </SelectTrigger>
                 <SelectContent>
@@ -264,21 +269,22 @@ export function AIProviderKeysForm() {
                 value={apiKey}
                 onChange={(event) => setApiKey(event.target.value)}
                 placeholder="Paste your API key"
-                className="h-11"
+                className="h-11 rounded-2xl border-zinc-200 bg-white"
               />
-              <p className="text-xs text-muted-foreground">
-                We never return the plaintext key in the UI, API responses, or toast messages.
-              </p>
             </div>
           </div>
+
+          <p className="text-xs text-zinc-500">
+            Keys are validated before saving, then only masked fingerprints are shown back to you.
+          </p>
 
           {inlineMessage ? (
             <div
               className={[
                 "flex items-start gap-3 rounded-2xl border px-4 py-3 text-sm",
                 inlineMessage.tone === "success"
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-emerald-200"
-                  : "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200",
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                  : "border-amber-200 bg-amber-50 text-amber-900",
               ].join(" ")}
             >
               {inlineMessage.tone === "success" ? (
@@ -290,8 +296,9 @@ export function AIProviderKeysForm() {
             </div>
           ) : null}
 
-          <div className="flex flex-wrap gap-3">
-            <Button onClick={handleSave} disabled={isSaving || isLoading || !isKeyStorageConfigured} size="lg" className="h-11 px-6">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+            <p className="text-sm text-zinc-600">Use the same provider again anytime to replace its saved key.</p>
+            <Button onClick={handleSave} disabled={isSaving || isLoading || !isKeyStorageConfigured} size="lg" className="h-11 rounded-2xl px-5">
               {isSaving ? <Loader2 className="animate-spin" /> : <KeyRound />}
               {isSaving ? "Testing key..." : "Test & Save"}
             </Button>
@@ -299,69 +306,62 @@ export function AIProviderKeysForm() {
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
-        <div>
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Saved provider keys</h3>
-          <p className="text-sm text-muted-foreground">Replace a saved key by selecting the same provider and saving a new one.</p>
+      <div className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-zinc-900">Saved keys</h3>
+            <p className="text-sm text-zinc-500">A lighter overview of the providers already connected to your account.</p>
+          </div>
         </div>
 
         {isLoading ? (
-          <Card>
-            <CardContent className="py-8 text-sm text-muted-foreground">Loading saved providers...</CardContent>
+          <Card className="rounded-3xl border-zinc-200/80 shadow-sm">
+            <CardContent className="py-8 text-sm text-zinc-500">Loading saved providers...</CardContent>
           </Card>
         ) : providers.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-sm text-muted-foreground">
+          <Card className="rounded-3xl border-zinc-200/80 shadow-sm">
+            <CardContent className="py-8 text-sm text-zinc-500">
               You haven&apos;t saved any provider keys yet.
             </CardContent>
           </Card>
         ) : (
-          <div className="grid gap-4 xl:grid-cols-2">
+          <div className="grid gap-4">
             {providers.map((provider) => {
               const providerConfig = supportedProviders.find((entry) => entry.id === provider.provider);
 
               return (
-                <Card key={provider.id} className="border border-zinc-200/80 shadow-sm">
-                  <CardHeader className="gap-2 sm:flex sm:flex-row sm:items-start sm:justify-between">
-                    <div className="space-y-1">
-                      <CardTitle>{providerConfig?.label ?? provider.provider}</CardTitle>
-                      <CardDescription>Saved key: {provider.keyFingerprint}</CardDescription>
-                    </div>
-                    <Badge variant={getStatusVariant(provider.status)} className="capitalize">
-                      {provider.status}
-                    </Badge>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-2">
-                      <div>
-                        <p className="font-medium text-foreground">Last validated</p>
-                        <p>{formatDate(provider.lastValidatedAt)}</p>
+                <Card key={provider.id} className="rounded-3xl border-zinc-200/80 shadow-sm">
+                  <CardContent className="space-y-4 px-5 py-5">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-zinc-900">{providerConfig?.label ?? provider.provider}</p>
+                          <Badge variant={getStatusVariant(provider.status)} className="rounded-full capitalize">
+                            {provider.status}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-zinc-500">Saved key: {provider.keyFingerprint}</p>
                       </div>
-                      <div>
-                        <p className="font-medium text-foreground">Last used</p>
-                        <p>{formatDate(provider.lastUsedAt)}</p>
+                      <div className="grid gap-1 text-sm text-zinc-500 sm:text-right">
+                        <p>Validated {formatDate(provider.lastValidatedAt)}</p>
+                        <p>Last used {formatDate(provider.lastUsedAt)}</p>
                       </div>
                     </div>
 
                     {provider.status === "invalid" ? (
-                      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200">
+                      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                         This saved key is marked invalid. Replace it with a fresh key to restore access.
                       </div>
                     ) : null}
 
                     <div className="flex flex-wrap gap-3">
-                      <Button
-                        variant="outline"
-                        size="lg"
-                        className="h-11 px-6"
-                        onClick={() => setSelectedProvider(provider.provider)}
-                      >
+                      <Button variant="outline" size="sm" className="rounded-2xl" onClick={() => setSelectedProvider(provider.provider)}>
                         Replace
                       </Button>
                       <Button
                         variant="destructive"
-                        size="lg"
-                        className="h-11 px-6"
+                        size="sm"
+                        className="rounded-2xl"
                         disabled={deletingProvider === provider.provider}
                         onClick={() => void handleDelete(provider.provider)}
                       >

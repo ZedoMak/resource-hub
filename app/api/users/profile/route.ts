@@ -32,6 +32,7 @@ export async function PATCH(req: NextRequest) {
 
     const body = await req.json();
     const { name, image } = body;
+    const normalizedImage = typeof image === "string" && image.trim() ? image.trim() : null;
 
     if (!name || typeof name !== "string") {
       return withRateLimitHeaders(
@@ -44,12 +45,12 @@ export async function PATCH(req: NextRequest) {
       .update(user)
       .set({
         name: name.trim(),
-        ...(image && { image }),
+        image: normalizedImage,
       })
       .where(eq(user.id, session.user.id));
 
     return withRateLimitHeaders(
-      NextResponse.json({ success: true, name: name.trim(), image }),
+      NextResponse.json({ success: true, name: name.trim(), image: normalizedImage }),
       state,
     );
   } catch (error) {

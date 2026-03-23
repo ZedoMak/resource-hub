@@ -12,9 +12,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { LogOut, User, Settings, LayoutDashboard } from "lucide-react";
+import { LogOut, Settings, LayoutDashboard } from "lucide-react";
 
-export function UserNav({ user }: { user: any }) {
+export function UserNav({ user }: { user: { name: string; email: string; image?: string | null } }) {
   const router = useRouter();
 
   const handleSignOut = async () => {
@@ -34,7 +34,7 @@ export function UserNav({ user }: { user: any }) {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarImage src={user.image || ""} alt={user.name} />
-            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-violet-600 text-white">{user.name.charAt(0)}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
