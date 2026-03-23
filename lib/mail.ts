@@ -1,8 +1,7 @@
-import { Resend } from 'resend';
+import { Resend } from "resend";
 
-const resend = process.env.RESEND_API_KEY 
-  ? new Resend(process.env.RESEND_API_KEY) 
-  : null;
+const emailVerificationEnabled = process.env.ENABLE_EMAIL_VERIFICATION === "true";
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 interface SendVerificationEmailProps {
   email: string;
@@ -10,6 +9,10 @@ interface SendVerificationEmailProps {
 }
 
 export const sendVerificationEmail = async ({ email, url }: SendVerificationEmailProps) => {
+  if (!emailVerificationEnabled) {
+    return;
+  }
+
   if (!resend) {
     console.warn("⚠️ RESEND_API_KEY not found in environment variables.");
     console.warn(`=> Verification link for ${email}: ${url}`);
@@ -18,9 +21,9 @@ export const sendVerificationEmail = async ({ email, url }: SendVerificationEmai
 
   try {
     const data = await resend.emails.send({
-      from: 'ResourceHub <onboarding@resend.dev>', // Update this to a verified domain in production
+      from: "ResourceHub <onboarding@resend.dev>", // Update this to a verified domain in production
       to: email,
-      subject: 'Verify your email address - ResourceHub',
+      subject: "Verify your email address - ResourceHub",
       html: `
         <!DOCTYPE html>
         <html>
