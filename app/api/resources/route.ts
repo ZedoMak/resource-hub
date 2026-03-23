@@ -3,17 +3,18 @@ import { ResourceService } from "@/services/resource.service";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { handleApiError } from "@/lib/security";
+import { normalizeTrustedUploadThingFileUrl } from "@/lib/trusted-resource-url";
+import { verifyTrustedUploadToken } from "@/lib/trusted-upload-token";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    
+
     const courseId = searchParams.get("courseId") ?? undefined;
     const typeParam = searchParams.get("type");
-    
-    // Validate type parameter
+
     const validTypes = ["EXAM", "NOTE", "SUMMARY", "ASSIGNMENT"] as const;
-    const type = validTypes.includes(typeParam as any) ? typeParam as any : undefined;
+    const type = validTypes.find((value) => value === typeParam);
 
     const data = await ResourceService.findMany({ courseId, type });
     const response = NextResponse.json(data);
@@ -25,7 +26,6 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    // Authenticate the user
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -35,14 +35,12 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { title, type, courseId, fileUrl } = body;
+    const { title, type, courseId, fileUrl, uploadToken } = body;
 
-    // Validate required fields
-    if (!title || !type || !courseId || !fileUrl) {
+    if (!title || !type || !courseId || !fileUrl || !uploadToken) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    // Validate field formats
     const validTypes = ["EXAM", "NOTE", "SUMMARY", "ASSIGNMENT"];
     if (!validTypes.includes(type)) {
       return NextResponse.json({ error: "Invalid resource type" }, { status: 400 });
@@ -56,27 +54,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Title cannot be empty" }, { status: 400 });
     }
 
-    // Validate URL format
-    try {
-      new URL(fileUrl);
-    } catch {
+    const trustedUpload = normalizeTrustedUploadThingFileUrl(fileUrl);
+
+    if (!trustedUpload) {
       return NextResponse.json({ error: "Invalid file URL" }, { status: 400 });
     }
 
-    // Extract fileKey from fileUrl (UploadThing provides this in the URL)
-    const fileKey = fileUrl.split('/').pop() || '';
-    
-    if (fileKey.length === 0) {
-      return NextResponse.json({ error: "Invalid file URL format" }, { status: 400 });
+    const isTrustedUpload = verifyTrustedUploadToken(uploadToken, {
+      fileKey: trustedUpload.fileKey,
+      fileUrl: trustedUpload.fileUrl,
+      userId: session.user.id,
+    });
+
+    if (!isTrustedUpload) {
+      return NextResponse.json({ error: "Upload verification failed" }, { status: 400 });
     }
 
-    // Create the resource
     const resource = await ResourceService.createResource({
       title: title.trim(),
       type,
       courseId,
-      fileUrl,
-      fileKey,
+      fileUrl: trustedUpload.fileUrl,
+      fileKey: trustedUpload.fileKey,
       userId: session.user.id,
     });
 

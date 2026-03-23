@@ -1,38 +1,43 @@
 "use client";
 
 import { useState } from "react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { UploadDropzone } from "@/lib/uploadthing";
 import { toast } from "sonner";
 import { Plus, FileIcon, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+type UploadedResourceFile = {
+  fileUrl: string;
+  uploadToken: string;
+};
+
 export function UploadResource({ isAuthenticated = true }: { isAuthenticated?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [uploadedFile, setUploadedFile] = useState<UploadedResourceFile | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [type, setType] = useState<string>("EXAM");
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!fileUrl) return toast.error("Please upload a file first");
+    if (!uploadedFile) return toast.error("Please upload a file first");
 
     const formData = new FormData(e.currentTarget);
     setIsSubmitting(true);
@@ -45,22 +50,23 @@ export function UploadResource({ isAuthenticated = true }: { isAuthenticated?: b
         },
         body: JSON.stringify({
           title: formData.get("title"),
-          type: type,          // ← use state, not FormData (Select is a headless component)
+          type,
           courseId: formData.get("courseId"),
-          fileUrl: fileUrl,
+          fileUrl: uploadedFile.fileUrl,
+          uploadToken: uploadedFile.uploadToken,
         }),
       });
 
       if (res.ok) {
         toast.success("Resource uploaded successfully!");
         setOpen(false);
-        setFileUrl(null);
+        setUploadedFile(null);
         setType("EXAM");
       } else {
         const data = await res.json().catch(() => ({}));
         toast.error(data.error || "Upload failed. Please try again.");
       }
-    } catch (error) {
+    } catch {
       toast.error("Something went wrong. Check your connection.");
     } finally {
       setIsSubmitting(false);
@@ -72,7 +78,7 @@ export function UploadResource({ isAuthenticated = true }: { isAuthenticated?: b
       <Button className="w-full gap-2" onClick={() => router.push("/login")}>
         <Plus className="h-4 w-4" /> Sign in to Upload
       </Button>
-    )
+    );
   }
 
   return (
@@ -86,7 +92,7 @@ export function UploadResource({ isAuthenticated = true }: { isAuthenticated?: b
         <DialogHeader>
           <DialogTitle>Upload New Resource</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6 pt-4">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
@@ -116,18 +122,31 @@ export function UploadResource({ isAuthenticated = true }: { isAuthenticated?: b
 
           <div className="space-y-2">
             <Label>File (PDF)</Label>
-            {!fileUrl ? (
+            {!uploadedFile ? (
               <UploadDropzone
                 endpoint="pdfUploader"
                 appearance={{
-                  container: "border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 flex flex-col items-center justify-center bg-zinc-50/50 hover:bg-zinc-50 transition-colors cursor-pointer",
-                  button: "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 rounded-md px-4 py-2 text-sm font-medium transition-colors w-full mt-4 cursor-pointer",
-                  label: "text-zinc-700 dark:text-zinc-300 font-medium hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors",
+                  container:
+                    "border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-xl p-6 flex flex-col items-center justify-center bg-zinc-50/50 hover:bg-zinc-50 transition-colors cursor-pointer",
+                  button:
+                    "bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-200 rounded-md px-4 py-2 text-sm font-medium transition-colors w-full mt-4 cursor-pointer",
+                  label:
+                    "text-zinc-700 dark:text-zinc-300 font-medium hover:text-zinc-900 dark:hover:text-zinc-100 transition-colors",
                   allowedContent: "text-zinc-500 text-xs mt-2",
                   uploadIcon: "text-zinc-400 mb-4 h-10 w-10",
                 }}
                 onClientUploadComplete={(res) => {
-                  setFileUrl(res[0].url);
+                  const uploaded = res[0]?.serverData;
+
+                  if (!uploaded?.fileUrl || !uploaded.uploadToken) {
+                    toast.error("Upload verification failed. Please try again.");
+                    return;
+                  }
+
+                  setUploadedFile({
+                    fileUrl: uploaded.fileUrl,
+                    uploadToken: uploaded.uploadToken,
+                  });
                   toast.success("File uploaded to server");
                 }}
                 onUploadError={(error: Error) => {
@@ -139,13 +158,15 @@ export function UploadResource({ isAuthenticated = true }: { isAuthenticated?: b
                 <FileIcon className="h-8 w-8 text-emerald-600" />
                 <div className="flex-1 overflow-hidden">
                   <p className="text-sm font-medium text-emerald-900 truncate">File ready for submission</p>
-                  <button onClick={() => setFileUrl(null)} className="text-xs text-emerald-700 underline">Change file</button>
+                  <button onClick={() => setUploadedFile(null)} className="text-xs text-emerald-700 underline">
+                    Change file
+                  </button>
                 </div>
               </div>
             )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={isSubmitting || !fileUrl}>
+          <Button type="submit" className="w-full" disabled={isSubmitting || !uploadedFile}>
             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Publish Resource"}
           </Button>
         </form>
