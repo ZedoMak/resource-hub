@@ -50,6 +50,7 @@ export const verification = pgTable("verification", {
 export const resourceTypeEnum = pgEnum("resource_type", ["EXAM", "NOTE", "SUMMARY", "ASSIGNMENT"]);
 export const aiProviderEnum = pgEnum("ai_provider", ["OPENAI", "GEMINI"]);
 export const aiProviderKeyStatusEnum = pgEnum("ai_provider_key_status", ["active", "invalid", "revoked"]);
+export const aiMessageRoleEnum = pgEnum("ai_message_role", ["system", "user", "assistant"]);
 
 export const universities = pgTable("universities", {
   id: text("id").primaryKey(),
@@ -138,4 +139,29 @@ export const aiProviderKeys = pgTable("ai_provider_keys", {
   userIdx: index("ai_provider_keys_user_id_idx").on(table.userId),
   userProviderIdx: index("ai_provider_keys_user_provider_idx").on(table.userId, table.provider),
   userProviderUnique: unique("ai_provider_keys_user_provider_unique").on(table.userId, table.provider),
+}));
+
+export const aiConversations = pgTable("ai_conversations", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  resourceId: text("resource_id").references(() => resources.id, { onDelete: "set null" }),
+  provider: aiProviderEnum("provider").notNull(),
+  model: text("model").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index("ai_conversations_user_id_idx").on(table.userId),
+  resourceIdx: index("ai_conversations_resource_id_idx").on(table.resourceId),
+  updatedAtIdx: index("ai_conversations_updated_at_idx").on(table.updatedAt),
+}));
+
+export const aiMessages = pgTable("ai_messages", {
+  id: text("id").primaryKey(),
+  conversationId: text("conversation_id").notNull().references(() => aiConversations.id, { onDelete: "cascade" }),
+  role: aiMessageRoleEnum("role").notNull(),
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  conversationIdx: index("ai_messages_conversation_id_idx").on(table.conversationId),
+  conversationCreatedAtIdx: index("ai_messages_conversation_created_at_idx").on(table.conversationId, table.createdAt),
 }));
