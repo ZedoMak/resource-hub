@@ -48,6 +48,8 @@ export const verification = pgTable("verification", {
 
 
 export const resourceTypeEnum = pgEnum("resource_type", ["EXAM", "NOTE", "SUMMARY", "ASSIGNMENT"]);
+export const aiProviderEnum = pgEnum("ai_provider", ["OPENAI", "GEMINI"]);
+export const aiProviderKeyStatusEnum = pgEnum("ai_provider_key_status", ["active", "invalid", "revoked"]);
 
 export const universities = pgTable("universities", {
   id: text("id").primaryKey(),
@@ -119,4 +121,21 @@ export const rateLimitBuckets = pgTable("rate_limit_buckets", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
   policyResetIdx: index("rate_limit_policy_reset_idx").on(table.policyId, table.resetAt),
+}));
+
+export const aiProviderKeys = pgTable("ai_provider_keys", {
+  id: text("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  provider: aiProviderEnum("provider").notNull(),
+  encryptedKey: text("encrypted_key").notNull(),
+  keyFingerprint: text("key_fingerprint").notNull(),
+  status: aiProviderKeyStatusEnum("status").default("active").notNull(),
+  lastValidatedAt: timestamp("last_validated_at"),
+  lastUsedAt: timestamp("last_used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  userIdx: index("ai_provider_keys_user_id_idx").on(table.userId),
+  userProviderIdx: index("ai_provider_keys_user_provider_idx").on(table.userId, table.provider),
+  userProviderUnique: unique("ai_provider_keys_user_provider_unique").on(table.userId, table.provider),
 }));
