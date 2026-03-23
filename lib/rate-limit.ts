@@ -81,6 +81,11 @@ export const rateLimitPolicies = {
     windowMs: 5 * 60 * 1000,
     maxRequests: 30,
   },
+  aiChat: {
+    id: "ai:chat",
+    windowMs: 5 * 60 * 1000,
+    maxRequests: 20,
+  },
 } satisfies Record<string, RateLimitPolicy>;
 
 export function getClientIp(req: NextRequest): string {
